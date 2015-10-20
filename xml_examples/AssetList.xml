@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<eveapi version="2">
+  <currentTime>2014-05-26 23:17:46</currentTime>
+  <result>
+    <rowset name="assets" key="itemID" columns="itemID,locationID,typeID,quantity,flag,singleton">
+      <row itemID="150354641" locationID="30000380" typeID="11019" quantity="1" flag="0" singleton="1">
+        <rowset name="contents" key="itemID" columns="itemID,typeID,quantity,flag,singleton">
+          <row itemID="150354709" typeID="16275" quantity="200000" flag="5" singleton="0" />
+          <row itemID="150354710" typeID="16272" quantity="150000" flag="5" singleton="0" />
+          <row itemID="150354723" typeID="44" quantity="4000" flag="5" singleton="0" />
+        </rowset>
+      </row>
+      <row itemID="1094995162" locationID="60012667" typeID="11172" quantity="1" flag="4" singleton="1" rawQuantity="-1">
+        <rowset name="contents" key="itemID" columns="itemID,typeID,quantity,flag,singleton">
+          <row itemID="268146868" typeID="2456" quantity="1" flag="87" singleton="0"/>
+          <row itemID="1012891238541" typeID="30488" quantity="1" flag="5" singleton="0"/>
+        </rowset>
+      </row>      
+      <row itemID="150212056" locationID="60001078" typeID="25851" quantity="10" flag="4" singleton="0" />
+      <row itemID="150212062" locationID="60001078" typeID="944" quantity="1" flag="4" singleton="1" />
+      <row itemID="150212063" locationID="60001078" typeID="597" quantity="1" flag="4" singleton="0" />
+    </rowset>
+  </result>
+  <cachedUntil>2014-05-27 05:17:46</cachedUntil>
+</eveapi>
