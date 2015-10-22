@@ -15,44 +15,20 @@ import (
 
 type RequestStruct  types.RequestStruct
 
-func main() {
 
-	skillQueue := RequestStruct{
-		// xmlPath: "char/SkillQueue.xml.aspx",
-		XmlPath:   "./xml_examples/skillQueue.xml",
-		XmlStruct: new(types.SkillQueueXML),
-		Params: map[string]string{
-			"characterID": "95107920",
-			"keyID":       "1469817",
-			"vCode":       "7YIAEB9NpNoKKnn84kRrplBDNDQKtqzvIkqK8CsNxKFOVgtGOQJubdBQjuwCT9CN",
-		},
-	}
-	v := skillQueue.fetch()
-
-	fmt.Printf("%s\n", v)
-}
-
-type LocalXMLPath struct {
-	path string
-}
-
-type HttpXMLPath struct {
-	path string
-}
-
-type XMLPath interface {
-	fetchXML() ([]byte, error)
-}
-
-func (rs *RequestStruct) fetch() string {
-	var f XMLPath
+func (rs *RequestStruct) Fetch() string {
+	var f RequestXML
 	if localPath(rs.XmlPath) {
-		f = LocalXMLPath{path: rs.XmlPath}
+		f = LocalXMLRequest{Path: rs.XmlPath}
 	} else {
 		urlPath := buildURL(rs.XmlPath, rs.Params)
-		f = HttpXMLPath{path: urlPath}
+		f = HttpXMLRequest{
+			Path: urlPath, 
+			HttpClient: http.Client{},
+			UserAgent: "SQO-GO/0.0.0 (jvnpackard@gmail.com)",
+		}
 	}
-	data, err := f.fetchXML()
+	data, err := f.FetchXML()
 	if err != nil {
 		fmt.Printf("%q", err)
 	}
@@ -79,14 +55,28 @@ func XMLToJSON(xmlStr []byte, v interface{}) (string, error) {
 	return string(result), nil
 }
 
-func (lxp LocalXMLPath) fetchXML() ([]byte, error) {
-	return ioutil.ReadFile(lxp.path)
+type LocalXMLRequest struct {
+	Path string
 }
 
-func (hxp HttpXMLPath) fetchXML() ([]byte, error) {
-	req, err := http.NewRequest("GET", hxp.path, nil)
-	req.Header.Set("User-Agent", "SQO-GO/0.0.0 (jvnpackard@gmail.com)")
-	client := &http.Client{}
+type HttpXMLRequest struct {
+	Path 		string
+	HttpClient	http.Client
+	UserAgent 	string
+}
+
+type RequestXML interface {
+	FetchXML() ([]byte, error)
+}
+
+func (lxr LocalXMLRequest) FetchXML() ([]byte, error) {
+	return ioutil.ReadFile(lxr.Path)
+}
+
+func (hxr HttpXMLRequest) FetchXML() ([]byte, error) {
+	req, err := http.NewRequest("GET", hxr.Path, nil)
+	req.Header.Set("User-Agent", hxr.UserAgent)
+	client := &hxr.HttpClient 
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("%s", err)
