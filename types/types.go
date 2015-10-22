@@ -15,5 +15,12 @@ type SkillQueueRowXML struct {
 type SkillQueueXML struct {		
 		CurrentTime string				`xml:"currentTime" json:"currentTime"`
 		Rows 		[]SkillQueueRowXML 	`xml:"result>rowset>row" json:"rows"`
-		CachedUntil string				`xml:"cachedUntil"	json:"cachedUntil"`
+		CachedUntil string				`xml:"cachedUntil" json:"cachedUntil"`
 	}
+
+
+type RequestStruct struct {
+	XmlPath   string
+	XmlStruct interface{}
+	Params    map[string]string
+}
