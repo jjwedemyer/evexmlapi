@@ -1,0 +1,3 @@
+﻿SELECT keyid, apipath, id, characterid, data, vcode
+  FROM cache
+	WHERE keyid = $1 and apipath = $2 and characterid = $3 and data::jsonb @> '{"currentTime":$4}';

@@ -5,95 +5,94 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/jovon/syncevexml/types"
+	_ "github.com/lib/pq"
 )
 
-type RequestStruct  types.RequestStruct
+type HttpRequest types.HttpRequest
 
+const (
+	UserAgent string = "SQO-GO/0.0.0 (jvnpackard@gmail.com)"
+	BaseURL   string = "https://api.testeveonline.com/"
+)
 
-func (rs *RequestStruct) Fetch() string {
-	var f RequestXML
-	if localPath(rs.XmlPath) {
-		f = LocalXMLRequest{Path: rs.XmlPath}
-	} else {
-		urlPath := buildURL(rs.XmlPath, rs.Params)
-		f = HttpXMLRequest{
-			Path: urlPath, 
-			HttpClient: http.Client{},
-			UserAgent: "SQO-GO/0.0.0 (jvnpackard@gmail.com)",
-		}
-	}
-	data, err := f.FetchXML()
-	if err != nil {
-		fmt.Printf("%q", err)
-	}
-	result, _ := XMLToJSON(data, rs.XmlStruct)
-	return result
-}
-
-func localPath(path string) bool {
-	pathRegExp := regexp.MustCompile(`(\A[a-zA-Z]:\\?)|(\A\.\/)|(\A..\/)|(\A..\\)`)
-	return pathRegExp.MatchString(path)
-}
-
-func XMLToJSON(xmlStr []byte, v interface{}) (string, error) {
-	err := xml.Unmarshal(xmlStr, v)
+func (hxr *HttpRequest) XMLToJSON(xmlStr *[]byte) ([]byte, error) {
+	v := hxr.DataFormat
+	err := xml.Unmarshal(*xmlStr, &v)
 	if err != nil {
 		fmt.Println("Error unmarshalling from XML", err)
-		return "", err
+		return []byte{}, err
 	}
 	result, err := json.Marshal(v)
 	if err != nil {
 		fmt.Println("Error marshalling to JSON", err)
-		return "", err
+		return []byte{}, err
 	}
-	return string(result), nil
+	return result, nil
 }
 
-type LocalXMLRequest struct {
-	Path string
+func (hxr *HttpRequest) MergeCache(r []byte, db *types.DB) int64 {
+	var lastId int64 = 0
+	err := db.QueryRow(`Select merge_cache($1::integer, $2::varchar(25), $3::varchar(50), $4::jsonb)`,
+		hxr.Params["keyID"], hxr.Params["characterID"], hxr.Path, string(r)).Scan(&lastId)
+
+	if err != nil {
+		log.Fatal("Fatal merge cache in Store: ", err)
+	}
+
+	return lastId
 }
 
-type HttpXMLRequest struct {
-	Path 		string
-	HttpClient	http.Client
-	UserAgent 	string
+func (hxr *HttpRequest) CheckCache(db *types.DB) (int64, error) {
+	var lastId int64
+	err := db.QueryRow("Select id from cache Where keyid = $1 and characterid = $2 and apipath = $3", hxr.Params["keyID"], hxr.Params["characterID"], hxr.Path).Scan(&lastId)
+	return lastId, err
 }
 
-type RequestXML interface {
-	FetchXML() ([]byte, error)
-}
+// func (dbr DBRequest) Fetch() (*sql.Rows, error) {
+// 	db, err := sql.Open("postgres", dbr.ConnString)
+// 	rows, err := db.Query(dbr.QueryString).Scan(&dbr.DataFormat)
+// 	defer rows.Close()
+// 	if err != nil {
+// 		fmt.Printf("%q", err)
+// 	}
+// 	return rows, nil
+// }
 
-func (lxr LocalXMLRequest) FetchXML() ([]byte, error) {
-	return ioutil.ReadFile(lxr.Path)
-}
-
-func (hxr HttpXMLRequest) FetchXML() ([]byte, error) {
-	req, err := http.NewRequest("GET", hxr.Path, nil)
-	req.Header.Set("User-Agent", hxr.UserAgent)
-	client := &hxr.HttpClient 
+func (hxr HttpRequest) Fetch() ([]byte, error) {
+	fullPath := hxr.buildURL()
+	req, err := http.NewRequest("GET", fullPath, nil)
+	req.Header.Set("User-Agent", UserAgent)
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("%s", err)
-		return make([]byte, 1), err
+		return []byte{}, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("%s", err)
-		return make([]byte, 1), err
+		return []byte{}, err
 	}
-	fmt.Println("Fetching XML")
 	return body, nil
 }
 
-func buildURL(path string, queryParams map[string]string) string {
-	baseURL := "https://api.testeveonline.com/"
+func (hxr HttpRequest) buildURL() string {
+	var baseURL string
+	if hxr.BaseURL != "" {
+		baseURL = hxr.BaseURL
+	} else {
+		baseURL = BaseURL
+	}
+
+	path := hxr.Path
+	queryParams := hxr.Params
 	if strings.HasPrefix(path, "/") {
 		strings.TrimLeft(path, "/")
 	}
