@@ -15,10 +15,18 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const dateForm = "2006-01-02 03:04:00"
+
 type HttpRequest struct {
 	userAgent string
 	baseURL   string
 	params    map[string]string
+}
+
+func testXMLServerRequest() *HttpRequest {
+	httpRequest = HttpRequest{}
+	httpRequest.SetBaseURL("https://api.testeveonline.com/")
+	return &httpRequest
 }
 
 func (hxr HttpRequest) AllParams() map[string]string {
@@ -90,7 +98,7 @@ func (hxr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int
 }
 
 func (hxr HttpRequest) CheckCache(db *data.DB, model models.Model) (int64, error) {
-	var lastId int64
+	var lastId int64 = 0
 	err := db.QueryRow(`Select id from cache Where keyid = $1 and characterid = $2 and apipath = $3`,
 		hxr.Param("keyID"), hxr.Param("characterID"), model.Path).Scan(&lastId)
 	return lastId, err

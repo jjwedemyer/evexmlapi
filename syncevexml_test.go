@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
+	"time"
 
 	"github.com/jovon/syncevexml/db"
 	"github.com/jovon/syncevexml/models"
@@ -48,6 +50,10 @@ func TestFetch_http(t *testing.T) {
 				t.Errorf("Key %q does not match, expected %q, got %q", key, value, r.Form[key][0])
 			}
 		}
+		pathCorrect, _ := regexp.MatchString(skillQueue.Path, r.RequestURI)
+		if !pathCorrect {
+			t.Errorf("Wrong URL. Expected %q. Got %q", skillQueue.Path, r.RequestURI)
+		}
 		if r.UserAgent() != httpRequest.UserAgent() {
 			t.Error("UserAgent does not match")
 		}
@@ -63,7 +69,6 @@ func TestFetch_http(t *testing.T) {
 		t.Errorf("Error fetching: %q", httpRequest)
 	}
 	j, _ := httpRequest.XMLToJSON(&v, skillQueue)
-
 	dat := make(map[string]interface{})
 	if err = json.Unmarshal([]byte(j), &dat); err != nil {
 		t.Errorf("Error Unmarshalling: %q\n; %q", v, err)
@@ -74,10 +79,16 @@ func TestFetch_http(t *testing.T) {
 }
 
 func TestCheckCache(t *testing.T) {
+	dateNow := time.Now().Format(dateForm)
 
-	r := []byte(`{"currentTime":"2009-04-18 15:19:43","rows":[{"queuePosition":"1","typeID":"11441","level":"3","startSP":"7072","endSP":"40000","startTime":"2009-03-18 02:01:06","endTime":"2009-03-18 15:19:21"},{"queuePosition":"2","typeID":"20533","level":"4","startSP":"112000","endSP":"633542","startTime":"2009-03-18 15:19:21","endTime":"2009-03-30 03:16:14"}],"cachedUntil":"2009-03-18 13:34:43"}`)
+	r := fmt.Sprintf(
+		`{"currentTime":"2009-04-18 15:19:43",
+		"rows":[{"queuePosition":"1","typeID":"11441","level":"3","startSP":"7072","endSP":"40000","startTime":"2009-03-18 02:01:06","endTime":"2009-03-18 15:19:21"},
+		{"queuePosition":"2","typeID":"20533","level":"4","startSP":"112000","endSP":"633542","startTime":"2009-03-18 15:19:21","endTime":"2009-03-30 03:16:14"}],
+		"cachedUntil":%q}`,
+		dateNow)
 
-	lastId := httpRequest.MergeCache(r, db, skillQueue)
+	lastId := httpRequest.MergeCache([]byte(r), db, skillQueue)
 
 	id, err := httpRequest.CheckCache(db, skillQueue)
 	if err != nil {
