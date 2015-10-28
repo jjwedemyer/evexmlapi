@@ -11,7 +11,6 @@ BEGIN
          into _id
          USING Data, keyId, characterId, apiPath;
         IF FOUND or _id != 0 THEN
-            raise notice 'found %', _id;
             RETURN _id;
         END IF;
 
@@ -25,7 +24,6 @@ BEGIN
             RETURN _id;
         EXCEPTION 
             WHEN unique_violation THEN
-                raise notice 'unique_violation';
             -- Do nothing, and loop to try the UPDATE again.
         END;
         
