@@ -1,8 +1,6 @@
 package syncevexml
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,80 +13,75 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const dateForm = "2006-01-02 03:04:00"
+const dateForm = "2006-01-02 15:04:05 UTC"
 
 type HttpRequest struct {
-	userAgent string
-	baseURL   string
-	params    map[string]string
+	userAgent   string
+	baseURL     string
+	params      map[string]string
+	cachedUntil string
 }
 
-func testXMLServerRequest() *HttpRequest {
+func TestXMLServerRequest() *HttpRequest {
 	httpRequest = HttpRequest{}
 	httpRequest.SetBaseURL("https://api.testeveonline.com/")
 	return &httpRequest
 }
 
-func (hxr HttpRequest) AllParams() map[string]string {
-	return hxr.params
+func (hr HttpRequest) AllParams() map[string]string {
+	return hr.params
 }
 
-func (hxr *HttpRequest) Param(p string) string {
-	return hxr.params[p]
+func (hr *HttpRequest) Param(p string) string {
+	return hr.params[p]
 }
 
-func (hxr *HttpRequest) SetParams(params map[string]string) {
-	if hxr.params == nil {
-		hxr.params = map[string]string{}
+func (hr *HttpRequest) SetParams(params map[string]string) {
+	if hr.params == nil {
+		hr.params = map[string]string{}
 	}
 	for key, value := range params {
-		hxr.params[key] = value
+		hr.params[key] = value
 	}
 }
 
-func (hxr HttpRequest) UserAgent() string {
-	if hxr.userAgent == "" {
+func (hr HttpRequest) UserAgent() string {
+	if hr.userAgent == "" {
 		return "SQO-GO/0.0.0 (jvnpackard@gmail.com)"
 	} else {
-		return hxr.userAgent
+		return hr.userAgent
 	}
 }
 
-func (hxr *HttpRequest) SetUserAgent(ua string) {
-	hxr.userAgent = ua
+func (hr *HttpRequest) SetCachedUntil(cu string) {
+	hr.cachedUntil = cu
 }
 
-func (hxr HttpRequest) BaseURL() string {
-	if hxr.baseURL == "" {
+func (hr HttpRequest) CachedUntil() string {
+	return hr.cachedUntil
+}
+
+func (hr *HttpRequest) SetUserAgent(ua string) {
+	hr.userAgent = ua
+}
+
+func (hr HttpRequest) BaseURL() string {
+	if hr.baseURL == "" {
 		return "https://api.testeveonline.com/"
 	} else {
-		return hxr.baseURL
+		return hr.baseURL
 	}
 }
 
-func (hxr *HttpRequest) SetBaseURL(bu string) {
-	hxr.baseURL = bu
+func (hr *HttpRequest) SetBaseURL(bu string) {
+	hr.baseURL = bu
 }
 
-func (hxr *HttpRequest) XMLToJSON(xmlStr *[]byte, model models.Model) ([]byte, error) {
-	v := model.DataFormat
-	err := xml.Unmarshal(*xmlStr, &v)
-	if err != nil {
-		fmt.Println("Error unmarshalling from XML", err)
-		return []byte{}, err
-	}
-	result, err := json.Marshal(v)
-	if err != nil {
-		fmt.Println("Error marshalling to JSON", err)
-		return []byte{}, err
-	}
-	return result, nil
-}
-
-func (hxr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int64 {
+func (hr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int64 {
 	var lastId int64 = 0
-	err := db.QueryRow(`Select merge_cache($1::integer, $2::varchar(25), $3::varchar(50), $4::jsonb)`,
-		hxr.Param("keyID"), hxr.Param("characterID"), model.Path, string(r)).Scan(&lastId)
+	// err := db.QueryRow(`Select merge_cache($1::integer, $2::varchar(25), $3::varchar(50), $4::jsonb, $5::timestamp)`,
+	err := db.QueryRow(`Select insert_delete_cache($1::integer, $2::varchar(25), $3::varchar(50), $4::jsonb, $5::timestamp)`,
+		hr.Param("keyID"), hr.Param("characterID"), model.Path, string(r), hr.CachedUntil()).Scan(&lastId)
 
 	if err != nil {
 		log.Fatal("Fatal merge cache: ", err)
@@ -97,18 +90,28 @@ func (hxr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int
 	return lastId
 }
 
-func (hxr HttpRequest) CheckCache(db *data.DB, model models.Model) (int64, error) {
+func (hr HttpRequest) CheckCache(db *data.DB, model models.Model) (int64, error) {
 	var lastId int64 = 0
-	err := db.QueryRow(`Select id from cache Where keyid = $1 and characterid = $2 and apipath = $3`,
-		hxr.Param("keyID"), hxr.Param("characterID"), model.Path).Scan(&lastId)
+	err := db.QueryRow(`Select id from cache Where keyid = $1 and characterid = $2 and apipath = $3 and cachedUntil = $4`,
+		hr.Param("keyID"), hr.Param("characterID"), model.Path, hr.CachedUntil()).Scan(&lastId)
 	return lastId, err
 }
 
-func (hxr HttpRequest) Fetch(model models.Model) ([]byte, error) {
-	fullPath := hxr.buildURL(model.Path)
+func Poll(path string) string {
+	resp, err := http.Head(path)
+	if err != nil {
+		log.Println("Error", path, err)
+		return err.Error()
+	}
+	return resp.Status
+}
+
+func (hr HttpRequest) Fetch(model models.Model) ([]byte, error) {
+	fullPath := hr.buildURL(model.Path)
+
 	req, err := http.NewRequest("GET", fullPath, nil)
 
-	req.Header.Set("User-Agent", hxr.UserAgent())
+	req.Header.Set("User-Agent", hr.UserAgent())
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -124,8 +127,8 @@ func (hxr HttpRequest) Fetch(model models.Model) ([]byte, error) {
 	return body, nil
 }
 
-func (hxr HttpRequest) buildURL(path string) string {
-	queryParams := hxr.AllParams()
+func (hr HttpRequest) buildURL(path string) string {
+	queryParams := hr.AllParams()
 	if strings.HasPrefix(path, "/") {
 		strings.TrimLeft(path, "/")
 	}
@@ -134,5 +137,5 @@ func (hxr HttpRequest) buildURL(path string) string {
 		v.Set(key, value)
 	}
 
-	return fmt.Sprint(hxr.BaseURL(), path, "?", v.Encode())
+	return fmt.Sprint(hr.BaseURL(), path, "?", v.Encode())
 }

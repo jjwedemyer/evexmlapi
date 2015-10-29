@@ -22,3 +22,24 @@ func SkillQueue() Model {
 		DataFormat: new(SkillQueueFormat),
 	}
 }
+
+// func (m *Model) XMLToJSON(xmlStr *[]byte) ([]byte, string, error) {
+// 	v := m.DataFormat
+// 	err := xml.Unmarshal(*xmlStr, &v)
+// 	if err != nil {
+// 		fmt.Println("Error unmarshalling from XML", err)
+// 		return []byte{}, "", err
+// 	}
+
+// 	cachedUntil := v.(*SkillQueueFormat).CachedUntil
+// 	result, err := json.Marshal(v)
+// 	if err != nil {
+// 		fmt.Println("Error marshalling to JSON", err)
+// 		return []byte{}, "", err
+// 	}
+// 	return result, cachedUntil, nil
+// }
+
+func (m *Model) GetCachedUntil(v interface{}) string {
+	return v.(*SkillQueueFormat).CachedUntil
+}
