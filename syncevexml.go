@@ -77,10 +77,15 @@ func (hr *HttpRequest) SetBaseURL(bu string) {
 	hr.baseURL = bu
 }
 
+/* Runs a postgres function that tries to insert the record.
+*	On success it then deletes records with the same keyid, characterid, and apipath with a cachedUntil date
+*		less than the provided cachedUntil date.
+*	If the record exists it ignores the unique validation error and does nothing.
+ */
 func (hr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int64 {
 	var lastId int64 = 0
 	err := db.QueryRow(`Select insert_delete_cache($1::integer, $2::varchar(25), $3::varchar(50), $4::jsonb, $5::timestamp)`,
-		hr.Param("keyID"), hr.Param("characterID"), model.Path, string(r), hr.CachedUntil()).Scan(&lastId)
+		hr.Param("keyID"), hr.Param("characterID"), model.Path(), string(r), hr.CachedUntil()).Scan(&lastId)
 
 	if err != nil {
 		log.Fatal("Fatal merge cache: ", err)
@@ -92,12 +97,13 @@ func (hr HttpRequest) MergeCache(r []byte, db *data.DB, model models.Model) int6
 func (hr HttpRequest) CheckCache(db *data.DB, model models.Model) (int64, error) {
 	var lastId int64 = 0
 	err := db.QueryRow(`Select id from cache Where keyid = $1 and characterid = $2 and apipath = $3 and cachedUntil = $4`,
-		hr.Param("keyID"), hr.Param("characterID"), model.Path, hr.CachedUntil()).Scan(&lastId)
+		hr.Param("keyID"), hr.Param("characterID"), model.Path(), hr.CachedUntil()).Scan(&lastId)
 	return lastId, err
 }
 
+// Retrieves the XML file from the provided model's path combined with the base URL.
 func (hr HttpRequest) Fetch(model models.Model) ([]byte, error) {
-	fullPath := hr.buildURL(model.Path)
+	fullPath := hr.buildURL(model.Path())
 
 	req, err := http.NewRequest("GET", fullPath, nil)
 

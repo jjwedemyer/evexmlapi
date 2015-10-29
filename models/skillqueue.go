@@ -1,5 +1,10 @@
 package models
 
+import (
+	"encoding/xml"
+	"log"
+)
+
 type SkillQueueRowFormat struct {
 	Position  string `xml:"queuePosition,attr" json:"queuePosition"`
 	TypeID    string `xml:"typeID,attr" json:"typeID"`
@@ -16,30 +21,30 @@ type SkillQueueFormat struct {
 	CachedUntil string                `xml:"cachedUntil" json:"cachedUntil"`
 }
 
-func SkillQueue() Model {
-	return Model{
-		Path:       "char/SkillQueue.xml.aspx",
-		DataFormat: new(SkillQueueFormat),
+func NewSkillQueue() SkillQueue {
+	return SkillQueue{
+		path: "char/SkillQueue.xml.aspx",
 	}
 }
 
-// func (m *Model) XMLToJSON(xmlStr *[]byte) ([]byte, string, error) {
-// 	v := m.DataFormat
-// 	err := xml.Unmarshal(*xmlStr, &v)
-// 	if err != nil {
-// 		fmt.Println("Error unmarshalling from XML", err)
-// 		return []byte{}, "", err
-// 	}
+type SkillQueue struct {
+	path string
+}
 
-// 	cachedUntil := v.(*SkillQueueFormat).CachedUntil
-// 	result, err := json.Marshal(v)
-// 	if err != nil {
-// 		fmt.Println("Error marshalling to JSON", err)
-// 		return []byte{}, "", err
-// 	}
-// 	return result, cachedUntil, nil
-// }
-
-func (m *Model) GetCachedUntil(v interface{}) string {
+func (m SkillQueue) GetCachedUntil(v interface{}) string {
 	return v.(*SkillQueueFormat).CachedUntil
+}
+
+func (m SkillQueue) Path() string {
+	return m.path
+}
+
+func (m SkillQueue) FromXML(xmlStr *[]byte) (interface{}, error) {
+	v := new(SkillQueueFormat)
+	err := xml.Unmarshal(*xmlStr, &v)
+	if err != nil {
+		log.Println("Error unmarshalling from XML", err)
+		return nil, err
+	}
+	return v, nil
 }
