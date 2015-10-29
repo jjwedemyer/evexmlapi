@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/jovon/syncevexml/db"
 	"github.com/jovon/syncevexml/models"
@@ -16,6 +17,7 @@ var (
 	db          = data.NewDB()
 	httpRequest = HttpRequest{}
 	skillQueue  = models.SkillQueue()
+	dateNow     string
 )
 
 // func TestXMLToJSON(t *testing.T) {
@@ -72,14 +74,10 @@ func TestFetch_http(t *testing.T) {
 	}
 }
 
-func TestCheckCache(t *testing.T) {
-	// dateNow := time.Now().Format(dateForm)
-	dateNow := "2015-10-29 18:25:02"
-	// data, _ := ioutil.ReadFile("./xml_examples/skillQueue.xml")
-	// r, err := skillQueue.FromXML(&data)
-	// if err != nil {
-	// 	t.Errorf("%q", err)
-	// }
+func TestUpdateCache(t *testing.T) {
+	duration, _ := time.ParseDuration("1h")
+	dateNow = time.Now().Add(duration).Format(dateForm)
+
 	r := fmt.Sprintf(
 		`{"currentTime":"2009-04-18 15:19:43",
 		"rows":[{"queuePosition":"1","typeID":"11441","level":"3","startSP":"7072","endSP":"40000","startTime":"2009-03-18 02:01:06","endTime":"2009-03-18 15:19:21"},
@@ -87,9 +85,7 @@ func TestCheckCache(t *testing.T) {
 		"cachedUntil":%q}`,
 		dateNow)
 	cachedUntil := dateNow
-	// cachedUntil := skillQueue.GetCachedUntil(r)
 	httpRequest.SetCachedUntil(cachedUntil)
-	// j, err := skillQueue.ToJSON(r)
 	lastId := httpRequest.MergeCache([]byte(r), db, skillQueue)
 
 	id, err := httpRequest.CheckCache(db, skillQueue)
@@ -100,6 +96,30 @@ func TestCheckCache(t *testing.T) {
 		t.Error("CheckCache returned 0")
 	}
 	if id != lastId {
-		t.Errorf("MergeCache = %q and CheckCache = %q do not have the same result", lastId, id)
+		t.Errorf("MergeCache = %q and CheckCache = %q returned different IDs", lastId, id)
+	}
+}
+
+func TestIgnoreCache(t *testing.T) {
+
+	r := fmt.Sprintf(
+		`{"currentTime":"2009-04-18 15:19:43",
+		"rows":[{"queuePosition":"1","typeID":"11441","level":"3","startSP":"7072","endSP":"40000","startTime":"2009-03-18 02:01:06","endTime":"2009-03-18 15:19:21"},
+		{"queuePosition":"2","typeID":"20533","level":"4","startSP":"112000","endSP":"633542","startTime":"2009-03-18 15:19:21","endTime":"2009-03-30 03:16:14"}],
+		"cachedUntil":%q}`,
+		dateNow)
+	cachedUntil := dateNow
+	httpRequest.SetCachedUntil(cachedUntil)
+	lastId := httpRequest.MergeCache([]byte(r), db, skillQueue)
+
+	id, err := httpRequest.CheckCache(db, skillQueue)
+	if err != nil {
+		t.Error("Error checking cache: ", err)
+	}
+	if id == 0 {
+		t.Error("CheckCache returned 0")
+	}
+	if id == lastId {
+		t.Errorf("MergeCache = %q and CheckCache = %q returned the same id", lastId, id)
 	}
 }
