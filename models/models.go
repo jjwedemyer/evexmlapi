@@ -7,14 +7,14 @@ import (
 
 type Model interface {
 	Path() string
-	GetCachedUntil(interface{}) string
-	FromXML(*[]byte) (interface{}, error)
+	// ToStruct([]byte) (interface{}, error)
+	CacheDuration() int64
 }
 
-func ToJSON(v Model) ([]byte, error) {
-	result, err := json.Marshal(v)
+func JSON(m Model) ([]byte, error) {
+	result, err := json.Marshal(m)
 	if err != nil {
-		log.Println("Error marshalling to JSON", err)
+		log.Printf("Error marshalling %q to JSON: %q", m.Path(), err)
 		return []byte{}, err
 	}
 	return result, nil
