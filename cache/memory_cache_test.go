@@ -1,29 +1,23 @@
 package cache
 
 import (
-	"testing"
 	"reflect"
-	"time"
+	"testing"
 )
 
-var (
-	key = "key";
-	value = []byte("value");
-)
-
-func TestRead(t *testing.T) {
-	mc := MemoryCache{}.New()	
-	mc.Write(key, value, 1000)
-	if !reflect.DeepEqual(mc.Read(key),value)  {
+func TestRead_memory(t *testing.T) {
+	mc := NewMemoryCache()
+	mc.Store(key, value, 1000)
+	data, _ := mc.Read(key)
+	if !reflect.DeepEqual(data, value) {
 		t.Error("MemoryCache key not read correctly.")
 	}
 }
-func TestRead_expired(t *testing.T) {
-	mc := MemoryCache{}.New()	
-	mc.Write(key, value, 1)
-	duration := time.Second * time.Duration(2)
-	time.Sleep(duration)
-	if mc.Read(key) != nil  {
+func TestRead_memory_expired(t *testing.T) {
+	mc := NewMemoryCache()
+	mc.Store(key, value, -1)
+	data, _ := mc.Read(key)
+	if data != nil {
 		t.Error("MemoryCache record did not expire correctly.")
 	}
 }

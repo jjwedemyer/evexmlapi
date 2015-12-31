@@ -1,25 +1,24 @@
 package cache
 
-import "time"
-
 type MemoryCache struct {
 	_cache map[string]RecordCache
+	cache  cache
 }
 
-func (mc MemoryCache) New() *MemoryCache {
-	return &MemoryCache{_cache: make(map[string]RecordCache)}
+func NewMemoryCache() *MemoryCache {
+	return &MemoryCache{_cache: make(map[string]RecordCache), cache: cache{}}
 }
 
-func (mc MemoryCache) Read(key string) []byte {
-	val, ok := mc._cache[key]
-	if ok && val.expireTime > time.Now().Unix() {		
-		return val.value
+func (c MemoryCache) Read(urlPath string) ([]byte, error) {
+	val, ok := c._cache[urlPath]
+	if ok && val.ExpireTime > c.cache.now() {
+		return val.Value, nil
 	}
+	return nil, nil
+}
+
+func (c *MemoryCache) Store(urlPath string, value []byte, duration int64) error {
+	expireT := duration + c.cache.now()
+	c._cache[urlPath] = RecordCache{Value: value, ExpireTime: expireT}
 	return nil
 }
-
-func (mc *MemoryCache) Write(key string, value []byte, duration int64) {
-	expireT := duration + time.Now().Unix()
-	mc._cache[key] = RecordCache{value: value, expireTime: expireT}
-}
-
