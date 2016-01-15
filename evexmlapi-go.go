@@ -2,8 +2,7 @@ package evexmlapi
 
 import (
 	"crypto/tls"
-	"fmt"
-	"io"
+	// "io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,81 +19,65 @@ type HttpRequest struct {
 	header          http.Header
 	cache           cache.Cache
 	client          *http.Client
-	handle          ResponseHandler
-	parse           BodyParser
+	handlers        []ResponseHandler
+	parsers         []bodyParser
 	params          Params
 	fetch           Fetcher
 	overrideBaseURL string
 }
 
-type ResponseHandler func(resp *http.Response) (*http.Response, error)
+type ResponseHandler func(resp *http.Response) error
 
-type Body io.ReadCloser
-
-type BodyParser func(b Body, r Resource) ([]byte, error)
+type bodyParser func(b []byte, r Resource) ([]byte, error)
 
 type Fetcher func(r Resource, hr *HttpRequest) ([]byte, error)
 
+// NewRequest constructs a new HttpRequest
 func NewRequest() *HttpRequest {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{},
 	}
 
 	hR := HttpRequest{client: &http.Client{Transport: tr}}
-	hR.SetCache("memory")
+	hR.cache = cache.NewMemoryCache()
 	hR.params = Params{}
-	hR.parse = bodyParser()
-	hR.handle = handler()
+	hR.parsers = []bodyParser{rawParser()}
+	hR.handlers = []ResponseHandler{handler()}
 	hR.fetch = fetchXML()
 	return &hR
 }
 
 func handler() ResponseHandler {
-	return func(resp *http.Response) (*http.Response, error) {
-		statusCode := resp.StatusCode
-		if statusCode != 200 {
-			defer resp.Body.Close()
-			return nil, fmt.Errorf("Status code(%d) for request(%s) returned; Message(%q)", statusCode, resp.Request.URL.RawPath, resp.Body)
-		}
-		return resp, nil
+	return func(resp *http.Response) error {
+		return nil
 	}
 }
 
-func bodyParser() BodyParser {
-	return func(b Body, r Resource) ([]byte, error) {
-		defer b.Close()
-		return ioutil.ReadAll(b)
+func rawParser() bodyParser {
+	return func(data []byte, r Resource) ([]byte, error) {
+		return data, nil
 	}
-}
-
-// SetCache takes a string and an Options stuct with path and prefix
-// properties for FileCache.
-func (hr *HttpRequest) SetCache(c string) error {
-	switch c {
-	case "memory":
-		hr.cache = cache.NewMemoryCache()
-	case "file":
-		hr.cache = cache.NewFileCache()
-	default:
-		return fmt.Errorf("setCache argument not recognized")
-	}
-	return nil
 }
 
 // SetToDefaultResponseHandler returns the response handler
 // back to the default.
 func (hr *HttpRequest) SetToDefaultResponseHandler() {
-	hr.handle = handler()
+	hr.handlers = []ResponseHandler{handler()}
 }
 
+// SetResponseHandler allows the user the change how the response
+// is handled, mostly for handling the different response status codes.
 func (hr *HttpRequest) SetResponseHandler(rh ResponseHandler) {
-	hr.handle = rh
+	hr.handlers = append(hr.handlers, rh)
 }
 
-func (hr *HttpRequest) SetBodyParser(parse BodyParser) {
-	hr.parse = parse
+// SetParser allows the user to change how the responses body
+// is parsed.
+func (hr *HttpRequest) SetParser(parse bodyParser) {
+	hr.parsers = append(hr.parsers, parse)
 }
 
+// UserAgent gets the userAgent
 func (hr HttpRequest) UserAgent() string {
 	if hr.userAgent == "" {
 		return "eve-xmlapi-GO/0.0.0 (jvnpackard@gmail.com)"
@@ -103,9 +86,9 @@ func (hr HttpRequest) UserAgent() string {
 }
 
 type cacheResults struct {
-	key      string
-	results  []byte
-	duration int64
+	key      string // used to find the results
+	results  []byte // the value stored in cache
+	duration int64  // time in seconds it should stay in cache
 	err      error
 }
 
@@ -120,36 +103,43 @@ func fetchXML() Fetcher {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		readCh := make(chan cacheResults)
 		caResults := cacheResults{key: fullPath}
 		go hr.checkCache(caResults, readCh)
-		read := <- readCh
+		read := <-readCh
 		if read.err != nil {
 			return nil, read.err
 		}
 		if read.results != nil {
 			return read.results, nil
 		}
-		
-		resp, err := hr.makeRequest(fullPath)
+
+		resp, err := hr.makeRequest(fullPath, r.method)
 		if err != nil {
 			return nil, err
 		}
-		
-		results, err := hr.parse(resp.Body, r)
+		defer resp.Body.Close()
+		results, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
-		
-		cacheCh := make(chan cacheResults)
+
+		for _, parse := range hr.parsers {
+			results, err = parse(results, r)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		writeCh := make(chan cacheResults)
 		ca := cacheResults{key: fullPath, results: results, duration: r.cacheDuration}
-		go hr.cacheResults(ca, cacheCh)
-		cached := <-cacheCh
+		go hr.cacheResults(ca, writeCh)
+		cached := <-writeCh
 		if cached.err != nil {
 			return nil, cached.err
 		}
-		return results, nil	
+		return results, nil
 	}
 }
 
@@ -173,22 +163,28 @@ func (hr *HttpRequest) cacheResults(ca cacheResults, ch chan cacheResults) {
 }
 
 // makeRequest sends the http request to get the xml
-func (hr HttpRequest) makeRequest(path string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", path, nil)
+func (hr HttpRequest) makeRequest(path string, method string) (*http.Response, error) {
+	req, err := http.NewRequest(method, path, nil)
 	req.Header.Set("User-Agent", hr.UserAgent())
 	resp, err := hr.client.Do(req)
 	if err != nil {
 		log.Fatalf("Do Request: %s", err)
 		return nil, err
 	}
-	return hr.handle(resp)
+	for _, h := range hr.handlers {
+		err = h(resp)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return resp, nil
 }
 
 // url builds the full url path
 func (hr HttpRequest) url(r Resource) (string, error) {
 	slash := "/"
 	path := r.path
-	baseURL := r.baseURL
+	baseURL := r.protocol + r.baseURL
 	if hr.overrideBaseURL != "" {
 		baseURL = hr.overrideBaseURL
 	}
@@ -209,10 +205,21 @@ func (hr HttpRequest) url(r Resource) (string, error) {
 
 func (hr HttpRequest) queryString(r Resource) (string, error) {
 	queryParams := hr.params
-	
 	v := url.Values{}
 	for key, value := range queryParams {
 		v.Set(key, value)
 	}
 	return v.Encode(), nil
+}
+
+func (hr *HttpRequest) SetFileCache(dir string, prefix string) {
+	hr.cache = cache.NewFileCache(dir, prefix)
+}
+
+func (hr *HttpRequest) SetBoltCache(file string)  {
+	hr.cache = cache.NewBoltCache(file, 0600, []byte("eve"), nil)
+}
+
+func (hr *HttpRequest) SetMemoryCache() {
+	hr.cache = cache.NewMemoryCache()
 }

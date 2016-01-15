@@ -25,6 +25,7 @@ var (
 		"keyID":       os.Getenv("keyID"),
 		"vCode":       os.Getenv("vCode"),
 	}
+	errorMessage = "Error(%q) \nfetching:\n httpRequest %+v\n resource %+v"
 )
 
 func XMLHTTPTestServer(t *testing.T, params map[string]string, rs Resource, testfile string) *httptest.Server {
@@ -58,12 +59,13 @@ func XMLHTTPTestServer(t *testing.T, params map[string]string, rs Resource, test
 	}))
 }
 
-func TestFetchXML_skillQueue(t *testing.T) {
+func TestFetch_skillQueue(t *testing.T) {
 	skillQueue := NewSkillQueue()
 	params := authParams
 	httpRequest.params = params
+	httpRequest.SetFileCache("", "test-")
 
-	httpRequest.SetResponseHandler(func(resp *http.Response) (*http.Response, error) {
+	httpRequest.SetResponseHandler(func(resp *http.Response) error {
 		f := handler()
 		return f(resp)
 	})
@@ -76,7 +78,7 @@ func TestFetchXML_skillQueue(t *testing.T) {
 
 	v, err := Fetch(skillQueue, httpRequest)
 	if err != nil {
-		t.Errorf("Error(%q) fetching: %q", err, httpRequest)
+		t.Errorf(errorMessage, err, httpRequest, skillQueue)
 	}
 	if v == nil {
 		t.Error("returned nil")
@@ -96,43 +98,43 @@ func TestFetchXML_skillQueue(t *testing.T) {
 	}
 }
 
-func TestFetchXML_serverStatus(t *testing.T) {
+func TestFetch_serverStatus(t *testing.T) {
 	serverStatus := NewServerStatus()
-	httpRequest.SetCache("file")
 	if testing.Short() {
 		ts := XMLHTTPTestServer(t, emptyParams, serverStatus, "serverStatus.xml")
 		defer ts.Close()
 		httpRequest.overrideBaseURL = ts.URL
 	}
+	httpRequest.SetMemoryCache()
 	httpRequest.params = emptyParams
-	httpRequest.SetBodyParser(func(b Body, r Resource) ([]byte, error) {
-		defer b.Close()
-		raw, err := ioutil.ReadAll(b)
-		if err != nil {
-			return raw, err
-		}
-		return r.JSON(raw)
+	httpRequest.SetParser(func(data []byte, r Resource) ([]byte, error) {		
+		return XMLtoJSON(data, r)
 	})
+	// serverStatus.SetDataFormat(&ServerStatusFormat{})
+	fmt.Print(serverStatus.format)
 	v, err := Fetch(serverStatus, httpRequest)
 	if err != nil {
-		t.Errorf("Error(%q) fetching: %q", err, httpRequest)
+		t.Errorf(errorMessage, err, httpRequest, serverStatus)
+		return
 	}
 	if v == nil {
 		t.Error("returned nil")
+		return
 	}
 	d := &ServerStatusFormat{}
 	err = json.Unmarshal(v, d)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	if d.CachedUntil == "" || d.OnlinePlayers == 0 {
 		t.Error("Error with json unmarshal")
+		return
 	}
 }
 
-func TestFetchXML_apiKeyInfo(t *testing.T) {
+func TestFetch_apiKeyInfo(t *testing.T) {
 	apiKeyInfo := NewAPIKeyInfo()
-	httpRequest.SetCache("file")
 	params := Params{"keyID": authParams["keyID"], "vCode": authParams["vCode"]}
 	if testing.Short() {
 		ts := XMLHTTPTestServer(t, params, apiKeyInfo, "APIKeyInfo.xml")
@@ -142,17 +144,21 @@ func TestFetchXML_apiKeyInfo(t *testing.T) {
 	httpRequest.params = params
 	v, err := Fetch(apiKeyInfo, httpRequest)
 	if err != nil {
-		t.Errorf("Error(%q) fetching: %q", err, httpRequest)
+		t.Errorf(errorMessage, err, httpRequest, apiKeyInfo)
+		return
 	}
 	if v == nil {
 		t.Error("returned nil")
+		return
 	}
 	d := &APIKeyInfoFormat{}
 	err = json.Unmarshal(v, d)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	if d.CachedUntil == "" || len(d.Keys) == 0 {
 		t.Error("Error with json unmarshal")
+		return
 	}
 }

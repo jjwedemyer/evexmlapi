@@ -3,8 +3,8 @@ package cache
 import "time"
 
 type Cache interface {
-	Read(urlPath string) ([]byte, error)
-	Store(urlPath string, value []byte, duration int64) error
+	Read(key string) ([]byte, error)
+	Store(key string, value []byte, duration int64) error
 }
 
 type RecordCache struct {

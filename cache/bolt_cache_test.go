@@ -5,13 +5,8 @@ import (
 	"testing"
 )
 
-var (
-	key   = "key12345"
-	value = []byte("value")
-)
-
-func TestRead_file(t *testing.T) {
-	ca := NewFileCache("", "")
+func TestRead_bolt(t *testing.T) {
+	ca := NewBoltCache("", 0600, []byte("eve"), nil)
 	setup(ca, 1)
 	data, err := ca.Read(key)
 	if err != nil {
@@ -23,8 +18,8 @@ func TestRead_file(t *testing.T) {
 	ca.clear()
 }
 
-func TestRead_file_expired(t *testing.T) {
-	ca := NewFileCache("", "")
+func TestRead_bolt_expired(t *testing.T) {
+	ca := NewBoltCache("", 0600, []byte("eve"), nil)
 	setup(ca, -1)
 	data, err := ca.Read(key)
 	if err != nil {
@@ -36,6 +31,3 @@ func TestRead_file_expired(t *testing.T) {
 	ca.clear()
 }
 
-func setup(ca Cache, duration int64) {
-	_ = ca.Store(key, value, duration)	
-}
