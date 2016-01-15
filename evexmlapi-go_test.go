@@ -110,8 +110,7 @@ func TestFetch_serverStatus(t *testing.T) {
 	httpRequest.SetParser(func(data []byte, r Resource) ([]byte, error) {		
 		return XMLtoJSON(data, r)
 	})
-	// serverStatus.SetDataFormat(&ServerStatusFormat{})
-	fmt.Print(serverStatus.format)
+	
 	v, err := Fetch(serverStatus, httpRequest)
 	if err != nil {
 		t.Errorf(errorMessage, err, httpRequest, serverStatus)

@@ -67,7 +67,7 @@ func (r Resource) verifyParams(params Params) error {
 // then converts it into a json byte array
 func XMLtoJSON(xmldata []byte, r Resource) ([]byte, error) {
 	if r.format == nil {
-		log.Panicf("Resource %+v does not have a data format", r)
+		log.Printf("Resource %+v does not have a data format", r)
 		return xmldata, nil
 	}
 	f := r.format
@@ -103,7 +103,7 @@ func NewServerStatus() Resource {
 		path:           "server/ServerStatus.xml.aspx",
 		cacheDuration:  180,
 		requiredParams: []string{},
-		// model:          model{format: &ServerStatusFormat{}},
+		model:          model{format: &ServerStatusFormat{}},
 		api:            xmlAPI,
 	}
 }

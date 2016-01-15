@@ -156,8 +156,7 @@ func (hr HttpRequest) checkCache(ca cacheResults, ch chan cacheResults) {
 
 func (hr *HttpRequest) cacheResults(ca cacheResults, ch chan cacheResults) {
 	if hr.cache != nil {
-		err := hr.cache.Store(ca.key, ca.results, ca.duration)
-		ca.err = err
+		ca.err = hr.cache.Store(ca.key, ca.results, ca.duration)
 	}
 	ch <- ca
 }
