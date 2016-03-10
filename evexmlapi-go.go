@@ -19,14 +19,14 @@ type HttpRequest struct {
 	header          http.Header
 	cache           cache.Cache
 	client          *http.Client
-	handlers        []ResponseHandler
+	handlers        []ResponseStatusHandler
 	parsers         []bodyParser
 	params          Params
 	fetch           Fetcher
 	overrideBaseURL string
 }
 
-type ResponseHandler func(resp *http.Response) error
+type ResponseStatusHandler func(resp *http.Response) error
 
 type bodyParser func(b []byte, r Resource) ([]byte, error)
 
@@ -42,12 +42,12 @@ func NewRequest() *HttpRequest {
 	hR.cache = cache.NewMemoryCache()
 	hR.params = Params{}
 	hR.parsers = []bodyParser{rawParser()}
-	hR.handlers = []ResponseHandler{handler()}
+	hR.handlers = []ResponseStatusHandler{handler()}
 	hR.fetch = fetchXML()
 	return &hR
 }
 
-func handler() ResponseHandler {
+func handler() ResponseStatusHandler {
 	return func(resp *http.Response) error {
 		return nil
 	}
@@ -62,12 +62,12 @@ func rawParser() bodyParser {
 // SetToDefaultResponseHandler returns the response handler
 // back to the default.
 func (hr *HttpRequest) SetToDefaultResponseHandler() {
-	hr.handlers = []ResponseHandler{handler()}
+	hr.handlers = []ResponseStatusHandler{handler()}
 }
 
 // SetResponseHandler allows the user the change how the response
 // is handled, mostly for handling the different response status codes.
-func (hr *HttpRequest) SetResponseHandler(rh ResponseHandler) {
+func (hr *HttpRequest) SetResponseHandler(rh ResponseStatusHandler) {
 	hr.handlers = append(hr.handlers, rh)
 }
 
@@ -206,7 +206,9 @@ func (hr HttpRequest) queryString(r Resource) (string, error) {
 	queryParams := hr.params
 	v := url.Values{}
 	for key, value := range queryParams {
-		v.Set(key, value)
+		for _, val := range value {
+			v.Add(key, val)
+		}
 	}
 	return v.Encode(), nil
 }

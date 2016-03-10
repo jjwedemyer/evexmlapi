@@ -19,16 +19,16 @@ func XMLServerRequest() *HttpRequest {
 var (
 	httpRequest    = XMLServerRequest()
 	testFileFolder = "./xml_examples/"
-	emptyParams    = map[string]string{}
-	authParams     = map[string]string{
-		"characterID": os.Getenv("characterID"),
-		"keyID":       os.Getenv("keyID"),
-		"vCode":       os.Getenv("vCode"),
+	emptyParams    = map[string][]string{}
+	authParams     = map[string][]string{
+		"characterID": []string{os.Getenv("characterID")},
+		"keyID":       []string{os.Getenv("keyID")},
+		"vCode":       []string{os.Getenv("vCode")},
 	}
 	errorMessage = "Error(%q) \nfetching:\n httpRequest %+v\n resource %+v"
 )
 
-func XMLHTTPTestServer(t *testing.T, params map[string]string, rs Resource, testfile string) *httptest.Server {
+func XMLHTTPTestServer(t *testing.T, params map[string][]string, rs Resource, testfile string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := ioutil.ReadFile(testFileFolder + testfile)
 		if err != nil {
@@ -37,7 +37,7 @@ func XMLHTTPTestServer(t *testing.T, params map[string]string, rs Resource, test
 		w.Header().Set("Content-Type", "application/xml")
 		_ = r.ParseForm()
 		for key, value := range params {
-			if r.Form[key][0] != value {
+			if r.Form[key][0] != value[0] {
 				w.WriteHeader(404)
 				t.Logf("Key %q does not match, expected %q, got %q", key, value, r.Form[key][0])
 			}
@@ -60,7 +60,7 @@ func XMLHTTPTestServer(t *testing.T, params map[string]string, rs Resource, test
 }
 
 func TestFetch_skillQueue(t *testing.T) {
-	skillQueue := NewSkillQueue()
+	skillQueue := NewCharSkillQueue()
 	params := authParams
 	httpRequest.params = params
 	httpRequest.SetFileCache("", "test-")
@@ -91,7 +91,7 @@ func TestFetch_skillQueue(t *testing.T) {
 		t.Errorf("Should be an Error, instead: %q", v)
 	}
 	// Tests that an error is returned if the wrong params are sent
-	httpRequest.params = Params{"keyID": ""}
+	httpRequest.params = Params{"keyID": []string{""}}
 	v, err = Fetch(skillQueue, httpRequest)
 	if err == nil {
 		t.Errorf("Should be an Error, instead: %q", err)
