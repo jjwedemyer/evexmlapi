@@ -301,3 +301,153 @@ func NewCharMailBodies() Resource {
 		api:            xmlAPI,
 	}
 }
+
+// NewCharMailingLists is a constructor for the NewCharMailingLists resource
+func NewCharMailingLists() Resource {
+	return Resource{
+		path:           "char/mailinglists.xml.aspx",
+		cacheDuration:  21600,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharMailMessages is a constructor for the NewCharMailMessages resource
+func NewCharMailMessages() Resource {
+	return Resource{
+		path:           "char/MailMessages.xml.aspx",
+		cacheDuration:  900,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharMarketOrders is a constructor for the NewCharMarketOrders resource
+func NewCharMarketOrders() Resource {
+	return Resource{
+		path:           "char/MarketOrders.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: append(charLevel, "orderID"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCharNotifications is a constructor for the NewCharNotifications resource
+func NewCharNotifications() Resource {
+	return Resource{
+		path:           "char/Notifications.xml.aspx",
+		cacheDuration:  1800,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharNotificationTexts is a constructor for the NewCharNotificationTexts resource
+func NewCharNotificationTexts() Resource {
+	return Resource{
+		path:           "char/NotificationTexts.xml.aspx",
+		cacheDuration:  315360000,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharPlanetaryColonies is a constructor for the NewCharPlanetaryColonies resource
+func NewCharPlanetaryColonies() Resource {
+	return Resource{
+		path:           "char/PlanetaryColonies.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharPlanetaryLinks is a constructor for the NewCharPlanetaryLinks resource
+func NewCharPlanetaryLinks() Resource {
+	return Resource{
+		path:           "char/PlanetaryLinks.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: append(charLevel, "planetID"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCharPlanetaryPins is a constructor for the NewCharPlanetaryPins resource
+func NewCharPlanetaryPins() Resource {
+	return Resource{
+		path:           "char/PlanetaryPins.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: append(charLevel, "planetID"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCharPlanetaryRoutes is a constructor for the NewCharPlanetaryRoutes resource
+func NewCharPlanetaryRoutes() Resource {
+	return Resource{
+		path:           "char/PlanetaryRoutes.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: append(charLevel, "planetID"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCharResearch is a constructor for the NewCharResearch resource
+func NewCharResearch() Resource {
+	return Resource{
+		path:           "char/Research.xml.aspx",
+		cacheDuration:  900,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharSkillInTraining is a constructor for the NewCharSkillInTraining resource
+func NewCharSkillInTraining() Resource {
+	return Resource{
+		path:           "char/SkillInTraining.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharStandings is a constructor for the NewCharStandings resource
+func NewCharStandings() Resource {
+	return Resource{
+		path:           "char/Standings.xml.aspx",
+		cacheDuration:  10800,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharUpcomingCalendarEvents is a constructor for the NewCharUpcomingCalendarEvents resource
+func NewCharUpcomingCalendarEvents() Resource {
+	return Resource{
+		path:           "char/UpcomingCalendarEvents.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCharWalletJournal is a constructor for the NewCharWalletJournal resource
+func NewCharWalletJournal() Resource {
+	return Resource{
+		path:           "char/WalletJournal.xml.aspx",
+		cacheDuration:  1800,
+		requiredParams: append(charLevel, "accountKey", "fromID", "rowCount"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCharWalletTransactions is a constructor for the NewCharWalletTransactions resource
+func NewCharWalletTransactions() Resource {
+	return Resource{
+		path:           "char/WalletTransactions.xml.aspx",
+		cacheDuration:  1800,
+		requiredParams: append(charLevel, "accountKey", "fromID", "rowCount"),
+		api:            xmlAPI,
+	}
+}
