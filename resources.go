@@ -87,6 +87,7 @@ var (
 	noParams     = []string{}	
 	accountLevel = []string{"keyID", "vCode"}
 	charLevel    = append(accountLevel, "characterID")
+	corpLevel	= append(accountLevel, "corporationID")
 )
 
 // NewCharSkillQueue is a constructor for the NewCharSkillQueue resource
@@ -448,6 +449,237 @@ func NewCharWalletTransactions() Resource {
 		path:           "char/WalletTransactions.xml.aspx",
 		cacheDuration:  1800,
 		requiredParams: append(charLevel, "accountKey", "fromID", "rowCount"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpAccountBalance is a constructor for the NewCorpAccountBalance resource
+func NewCorpAccountBalance() Resource {
+	return Resource{
+		path:           "corp/AccountBalance.xml.aspx",
+		cacheDuration:  900,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpBookmarks is a constructor for the NewCorpBookmarks resource
+func NewCorpBookmarks() Resource {
+	return Resource{
+		path:           "corp/Bookmarks.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: accountLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpCorporationSheet is a constructor for the NewCorpCorporationSheet resource
+func NewCorpCorporationSheet() Resource {
+	return Resource{
+		path:           "corp/CorporationSheet.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: []string{"corporationID"},
+		optionalParams:	accountLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpIndustryJobs is a constructor for the NewCorpIndustryJobs resource
+func NewCorpIndustryJobs() Resource {
+	return Resource{
+		path:           "corp/IndustryJobs.xml.aspx",
+		cacheDuration:  900,
+		requiredParams: accountLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpIndustryJobsHistory is a constructor for the NewCorpIndustryJobsHistory resource
+func NewCorpIndustryJobsHistory() Resource {
+	return Resource{
+		path:           "corp/IndustryJobsHistory.xml.aspx",
+		cacheDuration:  21600,
+		requiredParams: accountLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpMemberTracking is a constructor for the NewCorpMemberTracking resource
+func NewCorpMemberTracking() Resource {
+	return Resource{
+		path:           "corp/MemberTracking.xml.aspx",
+		cacheDuration:  19800,
+		requiredParams: append(accountLevel, "extended"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpStarbaseList is a constructor for the NewCorpStarbaseList resource
+func NewCorpStarbaseList() Resource {
+	return Resource{
+		path:           "corp/StarbaseList.xml.aspx",
+		cacheDuration:  21600,
+		requiredParams: accountLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpStarbaseDetail is a constructor for the NewCorpStarbaseDetail resource
+func NewCorpStarbaseDetail() Resource {
+	return Resource{
+		path:           "corp/StarbaseDetail.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: append(accountLevel, "itemID"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpWalletJournal is a constructor for the NewCorpWalletJournal resource
+func NewCorpWalletJournal() Resource {
+	return Resource{
+		path:           "corp/WalletJournal.xml.aspx",
+		cacheDuration:  1800,
+		requiredParams: append(accountLevel, "accountKey", "fromID", "rowCount"),
+		api:            xmlAPI,
+	}
+}
+
+// NewCorpWalletTransactions is a constructor for the NewCorpWalletTransactions resource
+func NewCorpWalletTransactions() Resource {
+	return Resource{
+		path:           "corp/WalletTransactions.xml.aspx",
+		cacheDuration:  1800,
+		requiredParams: append(accountLevel, "accountKey", "fromID", "rowCount"),
+		api:            xmlAPI,
+	}
+}
+
+// NewEveAllianceList is a constructor for the NewEveAllianceList resource
+func NewEveAllianceList() Resource {
+	return Resource{
+		path:           "eve/AllianceList.xml.aspx",
+		cacheDuration:  3600,
+		optionalParams: []string{"version"},
+		api:            xmlAPI,
+	}
+}
+
+// NewEveCharacterAffiliation is a constructor for the NewEveCharacterAffiliation resource
+func NewEveCharacterAffiliation() Resource {
+	return Resource{
+		path:           "eve/CharacterAffiliation.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: []string{"ids"},
+		api:            xmlAPI,
+	}
+}
+
+// NewEveCharacterID is a constructor for the NewEveCharacterID resource
+func NewEveCharacterID() Resource {
+	return Resource{
+		path:           "eve/CharacterID.xml.aspx",
+		cacheDuration:  43200,
+		requiredParams: []string{"names"},
+		api:            xmlAPI,
+	}
+}
+
+// NewEveCharacterInfo is a constructor for the NewEveCharacterInfo resource
+func NewEveCharacterInfo() Resource {
+	return Resource{
+		path:           "eve/CharacterInfo.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: charLevel,
+		api:            xmlAPI,
+	}
+}
+
+// NewEveCharacterName is a constructor for the NewEveCharacterName resource
+func NewEveCharacterName() Resource {
+	return Resource{
+		path:           "eve/CharacterName.xml.aspx",
+		cacheDuration:  2592000,
+		requiredParams: []string{"ids"},
+		api:            xmlAPI,
+	}
+}
+
+// NewEveConquerableStationList is a constructor for the NewEveConquerableStationList resource
+func NewEveConquerableStationList() Resource {
+	return Resource{
+		path:           "eve/ConquerableStationList.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewEveErrorList is a constructor for the NewEveErrorList resource
+func NewEveErrorList() Resource {
+	return Resource{
+		path:           "eve/ErrorList.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewEveRefTypes is a constructor for the NewEveRefTypes resource
+func NewEveRefTypes() Resource {
+	return Resource{
+		path:           "eve/RefTypes.xml.aspx",
+		cacheDuration:  86400,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewEveTypeName is a constructor for the NewEveTypeName resource
+func NewEveTypeName() Resource {
+	return Resource{
+		path:           "eve/TypeName.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: []string{"ids"},
+		api:            xmlAPI,
+	}
+}
+
+// NewMapFacWarSystems is a constructor for the NewMapFacWarSystems resource
+func NewMapFacWarSystems() Resource {
+	return Resource{
+		path:           "map/FacWarSystems.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewMapJumps is a constructor for the NewMapJumps resource
+func NewMapJumps() Resource {
+	return Resource{
+		path:           "map/Jumps.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewMapKills is a constructor for the NewMapKills resource
+func NewMapKills() Resource {
+	return Resource{
+		path:           "map/kills.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
+		api:            xmlAPI,
+	}
+}
+
+// NewMapSovereignty is a constructor for the NewMapSovereignty resource
+func NewMapSovereignty() Resource {
+	return Resource{
+		path:           "map/Sovereignty.xml.aspx",
+		cacheDuration:  3600,
+		requiredParams: noParams,
 		api:            xmlAPI,
 	}
 }
