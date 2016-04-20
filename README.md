@@ -23,6 +23,7 @@ Next create an httpRequest:
 								}
 								
 Then fetch your document:
+
 	d, err := evexmlapi.Fetch(skillQueue, httpRequest)
 
 
