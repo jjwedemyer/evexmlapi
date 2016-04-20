@@ -4,11 +4,14 @@
 <h2>Usage</h2>
 
 Start by creating a resource with:
+
 	skillQueue := evexmlapi.NewCharSkillQueue()	
 	<---The list of resource functions can be found in 'resources.go'.
 	
 Next create an httpRequest:
+
 	httpRequest  := evexmlapi.XMLServerRequest()
+	
 	-	You can override the base URL with 
 			httpRequest.overrideBaseURL = "https://api.testeveonline.com/"
 	
