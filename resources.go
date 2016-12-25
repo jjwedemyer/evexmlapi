@@ -84,7 +84,7 @@ func (r *Resource) SetDataFormat(f interface{}) {
 }
 
 var (
-	noParams     = []string{}	
+	noParams     = []string{}
 	accountLevel = []string{"keyID", "vCode"}
 	charLevel    = append(accountLevel, "characterID")
 	corpLevel	= append(accountLevel, "corporationID")
@@ -450,6 +450,16 @@ func NewCharWalletTransactions() Resource {
 		cacheDuration:  1800,
 		requiredParams: append(charLevel, "accountKey", "fromID", "rowCount"),
 		api:            xmlAPI,
+	}
+}
+
+// NewCorpAssetList is a constructor for the NewCorpAssetList resource
+func NewCorpAssetList() Resource {
+	return Resource{
+		path:						"corp/assetlist.xml.aspx",
+		cacheDuration:	7200,
+		requiredParams: charLevel,
+		api:						xmlAPI,
 	}
 }
 
