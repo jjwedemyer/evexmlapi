@@ -32,6 +32,12 @@ type bodyParser func(b []byte, r Resource) ([]byte, error)
 
 type Fetcher func(r Resource, hr *HttpRequest) ([]byte, error)
 
+func XMLServerRequest() *HttpRequest {
+	httpRequest := evexmlapi.NewRequest()
+	httpRequest.overrideBaseURL = "https://api.testeveonline.com/"
+	return httpRequest
+}
+
 // NewRequest constructs a new HttpRequest
 func NewRequest() *HttpRequest {
 	tr := &http.Transport{
