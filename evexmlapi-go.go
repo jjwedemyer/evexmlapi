@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/jovon/eve-xmlapi-go/cache"
+	"github.com/jovon/evexmlapigo/cache"
 )
 
 const dateForm = "2006-01-02 15:04:05 UTC"
